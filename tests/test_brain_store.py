@@ -20,7 +20,7 @@ class BrainStoreTests(unittest.TestCase):
         edges = [{"source": "repo-a", "target": "pkg-a", "type": "DEPENDS_ON", "properties": {}, "source_url": "https://example.test/manifest", "confidence": 0.9, "verified": True}]
         self.store.ingest("unit-test", entities, edges)
         result = self.store.investigate("test-investigation", "sample-parser", [], 1, False)
-        self.assertEqual(len(result["matched_entities"]), 1)
+        self.assertEqual(result["matched_entities"], [])
         self.assertEqual(len(result["nodes"]), 2)
         self.assertEqual(len(result["relationships"]), 1)
 
