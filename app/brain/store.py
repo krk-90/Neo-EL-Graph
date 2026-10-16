@@ -119,11 +119,14 @@ class BrainStore:
             if not frontier:
                 break
         result_nodes = [nodes[n] for n in visited if n in nodes and (include_unverified or nodes[n]["verified"])]
+        visible_ids = {node["id"] for node in result_nodes}
+        visible_edges = [edge for edge in selected_edges if edge["source"] in visible_ids and edge["target"] in visible_ids]
+        visible_seeds = [nodes[s] for s in seeds if include_unverified or nodes[s]["verified"]]
         result = {
             "investigation_id": investigation_id, "query": query,
-            "matched_entities": [nodes[s] for s in seeds],
+            "matched_entities": visible_seeds,
             "nodes": result_nodes,
-            "relationships": selected_edges,
+            "relationships": visible_edges,
             "evidence_gaps": [n["id"] for n in result_nodes if not n.get("source_url")],
             "limitations": ["Graph matches are candidate leads, not proof of exploitability.", "Only ingested data is searched.", "Unverified nodes are excluded unless explicitly requested."],
         }
