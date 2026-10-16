@@ -9,7 +9,7 @@ Build a persistent cybersecurity intelligence system whose advantage comes from 
 1. **Signal ingestion** — import public advisories, dependency manifests, repository metadata, logs, and analyst-provided intelligence.
 2. **Normalization and provenance** — convert source material into typed entities and relationships. Preserve source URLs, observation time, confidence, and verification state.
 3. **Persistent knowledge graph** — store repositories, packages, vulnerabilities, techniques, indicators, evidence, findings, and typed relationships. SQLite is the initial local adapter; Neo4j is the planned graph-scale adapter.
-4. **Retrieval and reasoning** — match query terms to known entities and traverse a bounded neighborhood. Future reasoning providers may propose hypotheses, but should not directly assert unverified facts.
+4. **Retrieval and reasoning** — match query terms to known entities and traverse a bounded neighborhood. An optional Groq-compatible reasoning provider can summarize retrieved context; without a key, deterministic fallback text is used. The model may propose hypotheses but cannot promote graph facts to verified status.
 5. **Verification and safety** — distinguish verified evidence from hypotheses, surface evidence gaps, and require explicit approval for any active or destructive security action.
 6. **Outcome learning** — store investigator feedback and evaluation results. Analyze error categories and test proposed changes against a fixed benchmark before promotion.
 7. **Observability and interface** — FastAPI endpoints, dashboard, audit history, latency and quality metrics.
