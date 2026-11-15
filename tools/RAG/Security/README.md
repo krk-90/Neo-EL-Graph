@@ -15,3 +15,16 @@ This package is independent of the current RAG chain and is intended for later o
 Pattern matching catches only a subset of obvious injection attempts. It cannot prove a model is prompt-injection-proof. Combine it with least-privilege tools, strict schemas, retrieval source controls, output validation, adversarial tests, monitoring and human review for high-impact actions.
 
 PII patterns are basic accidental-disclosure filters, not comprehensive DLP. Never log raw prompts, credentials or sensitive retrieved content by default.
+
+
+## API and operational controls for the orchestrator
+
+- Authenticate callers before invoking this package; authorize each operation using server-side identity and scopes.
+- Apply request-body and query-size limits, rate limits, timeouts, and concurrency limits at the API boundary.
+- Keep CORS origins explicit; do not use wildcard origins with credentialed requests.
+- Keep provider keys in environment/secret storage; never return them or place them in prompts.
+- Restrict model tools to an explicit allowlist and least privilege. Retrieval must not grant tool permissions.
+- Keep bounded provider retries for transient failures only; avoid retrying validation, authorization, or policy denials.
+- Log stable reason codes, latency and token counts; do not log raw sensitive content.
+- Return the fixed safe fallback for unexpected model/runtime failures. Preserve detailed exceptions only in access-controlled diagnostics after redaction.
+- Set provider timeouts and a maximum output token budget to prevent unbounded work.
