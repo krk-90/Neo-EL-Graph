@@ -45,3 +45,40 @@ def citation_coverage(answer: str, expected_ids: set[str]) -> float:
 
 def aggregate(values: Sequence[float]) -> float:
     return sum(values) / len(values) if values else 0.0
+
+
+def _percentile(values: Sequence[float], percentile: float) -> float:
+    if not values:
+        return 0.0
+    if not 0 <= percentile <= 100:
+        raise ValueError("percentile must be between 0 and 100")
+    ordered = sorted(float(value) for value in values)
+    index = max(0, math.ceil((percentile / 100) * len(ordered)) - 1)
+    return ordered[index]
+
+
+def summarize_runtime(records: Sequence[dict]) -> dict:
+    """Summarize optional per-request operational measurements.
+
+    Expected keys: latency_ms, retries, fallback, error, input_tokens,
+    output_tokens and cost_usd. Missing numeric values are treated as zero.
+    """
+    if not records:
+        return {
+            "requests": 0, "latency_ms_p50": 0.0, "latency_ms_p95": 0.0,
+            "retry_rate": 0.0, "fallback_rate": 0.0, "error_rate": 0.0,
+            "input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0,
+        }
+    count = len(records)
+    latencies = [max(0.0, float(row.get("latency_ms", 0) or 0)) for row in records]
+    return {
+        "requests": count,
+        "latency_ms_p50": _percentile(latencies, 50),
+        "latency_ms_p95": _percentile(latencies, 95),
+        "retry_rate": sum(bool(row.get("retries", 0)) for row in records) / count,
+        "fallback_rate": sum(bool(row.get("fallback", False)) for row in records) / count,
+        "error_rate": sum(bool(row.get("error", False)) for row in records) / count,
+        "input_tokens": sum(int(row.get("input_tokens", 0) or 0) for row in records),
+        "output_tokens": sum(int(row.get("output_tokens", 0) or 0) for row in records),
+        "cost_usd": sum(float(row.get("cost_usd", 0) or 0) for row in records),
+    }
