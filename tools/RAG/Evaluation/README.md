@@ -26,6 +26,14 @@ Verify each golden CVE is present in the actual filtered NVD dataset before usin
 
 ## Optional RAGAS
 
-RAGAS is not a mandatory dependency. Once rows contain questions, retrieved contexts, answers and ground truth, add a compatible RAGAS environment for faithfulness, answer relevancy, context precision and context recall. Record dataset version, prompt version, model, embedding model, k, timestamp, latency and token usage for each run.
+RAGAS is not a mandatory dependency. Install compatible ragas and datasets packages, then include a contexts array in each prediction row:
+
+    {"id":"log4shell_lookup","answer":"...","contexts":["retrieved document text"]}
+
+Run:
+
+    python -m tools.RAG.Evaluation.evaluate_ragas --predictions path/to/predictions_with_contexts.jsonl
+
+This computes faithfulness, answer relevancy, context precision and context recall against the golden reference answers. Record dataset version, prompt version, model, embedding model, k, timestamp, latency and token usage for each run.
 
 Exact match and token F1 are not semantic correctness measures. Review per-case failures and use human review for high-impact decisions.
