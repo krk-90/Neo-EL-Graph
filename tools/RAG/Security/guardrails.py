@@ -55,15 +55,17 @@ def validate_query(query: str, config: GuardrailConfig | None = None) -> Guardra
 
 def mark_untrusted_context(documents: Iterable[str], config: GuardrailConfig | None = None) -> GuardrailResult:
     config = config or GuardrailConfig()
-    safe_docs, total = [], 0
+    safe_docs, total, flags = [], 0, ["retrieved_content_is_untrusted"]
     for index, document in enumerate(documents, start=1):
         if not isinstance(document, str): continue
+        if detect_prompt_injection(document):
+            flags.append("possible_instruction_in_retrieved_evidence")
         remaining = config.max_context_chars - total
         if remaining <= 0: break
         clipped = document[:remaining]
         safe_docs.append(f'<untrusted_evidence index="{index}">\n{clipped}\n</untrusted_evidence>')
         total += len(clipped)
-    return GuardrailResult(True, "\n\n".join(safe_docs), risk_flags=["retrieved_content_is_untrusted"])
+    return GuardrailResult(True, "\n\n".join(safe_docs), risk_flags=sorted(set(flags)))
 
 def redact_sensitive_output(text: str) -> str:
     if not isinstance(text, str): return ""
