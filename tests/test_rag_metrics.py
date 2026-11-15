@@ -1,5 +1,5 @@
 import unittest
-from tools.RAG.Evaluation.metrics import citation_coverage, exact_match, ndcg_at_k, precision_at_k, recall_at_k, reciprocal_rank, token_f1
+from tools.RAG.Evaluation.metrics import citation_coverage, exact_match, ndcg_at_k, precision_at_k, recall_at_k, reciprocal_rank, summarize_runtime, token_f1
 
 class RetrievalMetricTests(unittest.TestCase):
     def test_precision_recall(self):
@@ -13,6 +13,17 @@ class RetrievalMetricTests(unittest.TestCase):
         self.assertAlmostEqual(ndcg_at_k(["a", "b"], {"a", "b"}, 2), 1.0)
     def test_invalid_k(self):
         with self.assertRaises(ValueError): precision_at_k([], set(), 0)
+    def test_runtime_metrics(self):
+        report = summarize_runtime([
+            {"latency_ms": 100, "retries": 0, "fallback": False, "error": False, "input_tokens": 10},
+            {"latency_ms": 300, "retries": 1, "fallback": True, "error": False, "output_tokens": 20},
+        ])
+        self.assertEqual(report["latency_ms_p50"], 100)
+        self.assertEqual(report["latency_ms_p95"], 300)
+        self.assertEqual(report["retry_rate"], 0.5)
+        self.assertEqual(report["fallback_rate"], 0.5)
+        self.assertEqual(report["input_tokens"], 10)
+        self.assertEqual(report["output_tokens"], 20)
 
 class GenerationMetricTests(unittest.TestCase):
     def test_exact_match_ignores_case_and_whitespace(self):
