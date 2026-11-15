@@ -33,12 +33,11 @@ _INJECTION_PATTERNS = (
     re.compile(r"\bDAN\s+mode\b", re.I),
 )
 _EMAIL = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I)
-_PHONE = re.compile(r"(?<!\w)(?:\+?\d[\d\s().-]{7,}\d)(?!\w)")
+_PHONE = re.compile(r"(?<![A-Za-z0-9-])(?:\+?\d[\d\s().-]{7,}\d)(?!\w)")
 _SECRET = re.compile(r"\b(?:sk-[A-Za-z0-9_-]{12,}|gh[pousr]_[A-Za-z0-9]{20,})\b")
 
 def detect_prompt_injection(text: str) -> list[str]:
-    if not isinstance(text, str):
-        return ["non_string_input"]
+    if not isinstance(text, str): return ["non_string_input"]
     flags = [f"injection_pattern_{i + 1}" for i, pattern in enumerate(_INJECTION_PATTERNS) if pattern.search(text)]
     if re.search(r"(?i)\b(ignore|override|bypass)\b.{0,80}\b(safety|guardrails|instructions|policy)\b", text):
         flags.append("instruction_override")
@@ -46,54 +45,42 @@ def detect_prompt_injection(text: str) -> list[str]:
 
 def validate_query(query: str, config: GuardrailConfig | None = None) -> GuardrailResult:
     config = config or GuardrailConfig()
-    if not isinstance(query, str):
-        return GuardrailResult(False, "", "query_must_be_text")
+    if not isinstance(query, str): return GuardrailResult(False, "", "query_must_be_text")
     cleaned = query.strip()
-    if not cleaned:
-        return GuardrailResult(False, "", "empty_query")
-    if len(cleaned) > config.max_query_chars:
-        return GuardrailResult(False, "", "query_too_long")
+    if not cleaned: return GuardrailResult(False, "", "empty_query")
+    if len(cleaned) > config.max_query_chars: return GuardrailResult(False, "", "query_too_long")
     flags = detect_prompt_injection(cleaned)
-    if flags and config.block_obvious_injection:
-        return GuardrailResult(False, "", "possible_prompt_injection", flags)
+    if flags and config.block_obvious_injection: return GuardrailResult(False, "", "possible_prompt_injection", flags)
     return GuardrailResult(True, cleaned, risk_flags=flags)
 
 def mark_untrusted_context(documents: Iterable[str], config: GuardrailConfig | None = None) -> GuardrailResult:
     config = config or GuardrailConfig()
-    safe_docs = []
-    total = 0
+    safe_docs, total = [], 0
     for index, document in enumerate(documents, start=1):
-        if not isinstance(document, str):
-            continue
+        if not isinstance(document, str): continue
         remaining = config.max_context_chars - total
-        if remaining <= 0:
-            break
+        if remaining <= 0: break
         clipped = document[:remaining]
         safe_docs.append(f'<untrusted_evidence index="{index}">\n{clipped}\n</untrusted_evidence>')
         total += len(clipped)
     return GuardrailResult(True, "\n\n".join(safe_docs), risk_flags=["retrieved_content_is_untrusted"])
 
 def redact_sensitive_output(text: str) -> str:
-    if not isinstance(text, str):
-        return ""
+    if not isinstance(text, str): return ""
     text = _EMAIL.sub("[REDACTED_EMAIL]", text)
     text = _SECRET.sub("[REDACTED_SECRET]", text)
     return _PHONE.sub("[REDACTED_PHONE]", text)
 
 def validate_output(output: str, config: GuardrailConfig | None = None) -> GuardrailResult:
     config = config or GuardrailConfig()
-    if not isinstance(output, str):
-        return GuardrailResult(False, "", "output_must_be_text")
+    if not isinstance(output, str): return GuardrailResult(False, "", "output_must_be_text")
     cleaned = output.strip()
-    if not cleaned:
-        return GuardrailResult(False, "", "empty_model_output")
-    if len(cleaned) > config.max_output_chars:
-        return GuardrailResult(False, "", "output_too_long")
+    if not cleaned: return GuardrailResult(False, "", "empty_model_output")
+    if len(cleaned) > config.max_output_chars: return GuardrailResult(False, "", "output_too_long")
     flags = []
     if config.redact_pii:
         redacted = redact_sensitive_output(cleaned)
-        if redacted != cleaned:
-            flags.append("sensitive_data_redacted")
+        if redacted != cleaned: flags.append("sensitive_data_redacted")
         cleaned = redacted
     return GuardrailResult(True, cleaned, risk_flags=flags)
 
