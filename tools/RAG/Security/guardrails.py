@@ -86,5 +86,6 @@ def validate_output(output: str, config: GuardrailConfig | None = None) -> Guard
         cleaned = redacted
     return GuardrailResult(True, cleaned, risk_flags=flags)
 
-def safe_fallback(reason: str = "I could not safely complete that request.") -> str:
-    return reason
+def safe_fallback() -> str:
+    """Return a fixed message; never echo untrusted exception text to users."""
+    return "I could not safely complete that request. Please rephrase or try again later."
