@@ -4,9 +4,11 @@ Install a RAGAS release compatible with your LangChain/Python environment before
 Prediction JSONL rows must include id, answer and contexts (a list of retrieved text).
 """
 from __future__ import annotations
+
 import argparse
 import json
 from pathlib import Path
+
 from tools.RAG.Evaluation.evaluate import GOLDEN_PATH, load_jsonl
 
 
@@ -14,7 +16,12 @@ def evaluate_ragas(golden: dict[str, dict], predictions: dict[str, dict]) -> dic
     try:
         from datasets import Dataset
         from ragas import evaluate as ragas_evaluate
-        from ragas.metrics import answer_relevancy, context_precision, context_recall, faithfulness
+        from ragas.metrics import (
+            answer_relevancy,
+            context_precision,
+            context_recall,
+            faithfulness,
+        )
     except ImportError as exc:
         raise RuntimeError(
             "Optional RAGAS evaluation requires compatible 'ragas' and 'datasets' packages."

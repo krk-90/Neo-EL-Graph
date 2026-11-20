@@ -1,6 +1,15 @@
 import unittest
-from tools.RAG.Security.guardrails import GuardrailConfig, detect_prompt_injection, mark_untrusted_context, redact_sensitive_output, validate_output, validate_query
+
+from tools.RAG.Security.guardrails import (
+    GuardrailConfig,
+    detect_prompt_injection,
+    mark_untrusted_context,
+    redact_sensitive_output,
+    validate_output,
+    validate_query,
+)
 from tools.RAG.Security.prompts import build_rag_prompt
+
 
 class QueryGuardrailTests(unittest.TestCase):
     def test_empty_query_is_rejected(self):

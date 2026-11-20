@@ -1,9 +1,20 @@
 """Offline evaluator for JSONL golden cases and model predictions."""
 from __future__ import annotations
+
 import argparse
 import json
 from pathlib import Path
-from tools.RAG.Evaluation.metrics import aggregate, citation_coverage, exact_match, ndcg_at_k, precision_at_k, recall_at_k, reciprocal_rank, token_f1
+
+from tools.RAG.Evaluation.metrics import (
+    aggregate,
+    citation_coverage,
+    exact_match,
+    ndcg_at_k,
+    precision_at_k,
+    recall_at_k,
+    reciprocal_rank,
+    token_f1,
+)
 
 HERE = Path(__file__).resolve().parent
 GOLDEN_PATH = HERE / "golden_dataset.jsonl"

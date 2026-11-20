@@ -4,9 +4,11 @@ Defense-in-depth only: these checks do not make prompt injection impossible.
 Authorization must be enforced by trusted application code, never model output.
 """
 from __future__ import annotations
+
 import re
 from dataclasses import dataclass, field
 from typing import Iterable
+
 
 @dataclass(frozen=True)
 class GuardrailConfig:

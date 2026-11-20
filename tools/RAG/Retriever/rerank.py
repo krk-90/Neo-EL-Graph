@@ -1,9 +1,9 @@
 import os
 from functools import lru_cache
- 
-from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+
 from langchain_classic.retrievers import ContextualCompressionRetriever
 from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
+from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
 RERANKER_MODEL = os.environ.get("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
 

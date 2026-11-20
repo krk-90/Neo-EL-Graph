@@ -5,7 +5,6 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-
 SEVERITY_ORDER = ("CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN")
 CHROMA_GET_BATCH_SIZE = 300
 PROJECT_ROOT = Path(__file__).resolve().parents[2]

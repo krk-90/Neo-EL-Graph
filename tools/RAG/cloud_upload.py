@@ -1,6 +1,8 @@
 import os
+
 import chromadb
 from langchain_chroma import Chroma
+
 from tools.RAG.ingest import processing
 
 local = processing.get_chroma_store(local=True)

@@ -1,5 +1,16 @@
 import unittest
-from tools.RAG.Evaluation.metrics import citation_coverage, exact_match, ndcg_at_k, precision_at_k, recall_at_k, reciprocal_rank, summarize_runtime, token_f1
+
+from tools.RAG.Evaluation.metrics import (
+    citation_coverage,
+    exact_match,
+    ndcg_at_k,
+    precision_at_k,
+    recall_at_k,
+    reciprocal_rank,
+    summarize_runtime,
+    token_f1,
+)
+
 
 class RetrievalMetricTests(unittest.TestCase):
     def test_precision_recall(self):

@@ -22,6 +22,10 @@ Run:
 
     python -m tools.RAG.Evaluation.evaluate --predictions path/to/predictions.jsonl --k 5
 
+Run the live retrieval benchmark and save JSON metrics:
+
+    python -m tools.RAG.Evaluation.benchmark_retrieval --k 5 --output tools/RAG/Evaluation/retrieval_metrics.json
+
 Verify each golden CVE is present in the actual filtered NVD dataset before using scores as release gates. Update the golden set with representative queries, hard negatives, no-answer cases and adversarial examples.
 
 ## Optional RAGAS

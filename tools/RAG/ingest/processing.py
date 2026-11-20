@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Iterable, List, Sequence
 
 from dotenv import load_dotenv
+from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")

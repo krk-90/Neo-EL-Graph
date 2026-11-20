@@ -1,6 +1,6 @@
+import argparse
 import os
 import sys
-import argparse
 from functools import lru_cache
 from pathlib import Path
 
@@ -63,7 +63,7 @@ def get_rag_chain(llm_model,retriever):
 @traceable(name="rag query")
 def ask_streaming(rag_chain, query: str):
     """Streams the answer; collects sources from the first chunk that has them."""
-    full_answer = ""
+    answer_parts = []
     sources = []
     for chunk in rag_chain.stream({"input": query}):
         if "context" in chunk and not sources:
@@ -78,9 +78,9 @@ def ask_streaming(rag_chain, query: str):
             ]
         if "answer" in chunk:
             print(chunk["answer"], end="", flush=True)
-            full_answer += chunk["answer"]
+            answer_parts.append(chunk["answer"])
     print()
-    return {"answer": full_answer, "retrieved": sources}
+    return {"answer": "".join(answer_parts), "retrieved": sources}
 
 def main():
     parser = argparse.ArgumentParser(description="Query the RAG system")

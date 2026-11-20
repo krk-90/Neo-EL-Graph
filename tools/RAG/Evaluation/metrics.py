@@ -1,8 +1,10 @@
 """Dependency-light retrieval and answer evaluation metrics."""
 from __future__ import annotations
+
 import math
 import re
 from collections.abc import Sequence
+
 
 def _normalize(value: str) -> str:
     return re.sub(r"\s+", " ", value.casefold()).strip()

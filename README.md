@@ -1,8 +1,8 @@
 # Neo-EL-Graph
 
-Neo-EL-Graph is an experimental vulnerability-research RAG system. It processes National Vulnerability Database (NVD) CVE records, indexes them in Chroma with Hugging Face embeddings, retrieves evidence with hybrid vector + BM25 search and reranking, and can generate grounded answers with Groq. The repository also contains offline evaluation, security guardrail modules, and LangSmith tracing hooks.
+Neo-EL-Graph is an experimental vulnerability-research system. It can query the National Vulnerability Database (NVD) 2.0 API directly through an API agent, and the repository also retains separate experimental RAG and evaluation components.
 
-> **Current scope:** the runnable workflow is the CVE data → Chroma → retrieval → optional answer-generation pipeline. The `agent/orchestrator/main.py` and `tools/mcp_tools/server.py` files are currently incomplete stubs; there is no ready-to-run API server or MCP server yet.
+> **Current scope:** the NVD API agent is runnable directly. Chroma/RAG components are separate experimental tools and are not used by the orchestrator.
 
 ## Features
 
@@ -167,7 +167,24 @@ python -m tools.RAG.Retriever.retrieval --inspect --limit 10
 
 The collection must be populated before retrieval. If it is empty, run the indexing step first.
 
-## 8. Generate an answer with Groq (optional)
+## 8. Query the NVD API agent
+
+The orchestrator performs direct NVD 2.0 API lookups and does not use Chroma or RAG retrieval.
+
+```powershell
+python -m agent.orchestrator.main CVE-2021-44228
+python -m agent.orchestrator.main "remote code execution" --severity CRITICAL --limit 10
+```
+
+Set `NVD_API_KEY` in `.env` to increase NVD API rate limits.
+
+Fetch and merge CVE records into a JSONL dataset without invoking RAG:
+
+```powershell
+python -m Data.data_analysis.fetch_nvd_api CVE-2021-44228 CVE-2021-45046 --output Data/processed/nvd_filtered.jsonl
+```
+
+## 9. Generate an answer with Groq (optional)
 
 Set `GROQ_API_KEY` in `.env`, ensure the Chroma index exists, then run:
 
@@ -184,7 +201,7 @@ python -m tools.RAG.Generation.main "Find high severity vulnerabilities related 
 
 This command streams the answer and can print the retrieved CVE IDs, severity, CVSS score, and snippets. Groq is not needed for indexing or retrieval-only commands.
 
-## 9. Run tests
+## 10. Run tests
 
 Run the repository's unit tests from the project root:
 
@@ -192,7 +209,7 @@ Run the repository's unit tests from the project root:
 python -m unittest discover -s tests -v
 ```
 
-## 10. Run the offline RAG evaluation
+## 11. Run the offline RAG evaluation
 
 The golden dataset is at `tools/RAG/Evaluation/golden_dataset.jsonl`. First create a predictions JSONL file with one row for every golden case. Each row must include the matching `id`, an ordered `retrieved_ids` list of CVE IDs, and the generated `answer`.
 
@@ -226,7 +243,7 @@ python -m tools.RAG.Evaluation.evaluate_ragas --predictions path/to/predictions_
 
 This reports faithfulness, answer relevancy, context precision, and context recall. RAGAS may require additional model/provider configuration depending on the installed version.
 
-## 11. Security module
+## 12. Security module
 
 The security helpers and prompt templates are in `tools/RAG/Security/`. Read [the security integration notes](tools/RAG/Security/README.md) before wiring them into an application. They are not currently connected to the active retrieval/generation CLI pipeline, and pattern-based checks cannot guarantee prompt-injection immunity.
 
@@ -241,8 +258,8 @@ Neo-EL-Graph/
 │   └── processed/           # Processed CVE JSONL datasets
 ├── Database/                # Local Chroma persistence
 ├── agent/
-│   ├── orchestrator/        # Incomplete orchestration entry point
-│   └── rag_agent.py         # Agent wrapper requiring injected model/retriever
+│   ├── orchestrator/        # Direct NVD API orchestrator
+│   └── nvd_api_agent.py     # Exact-CVE and keyword NVD API agent
 ├── tools/
 │   ├── RAG/
 │   │   ├── Evaluation/      # Offline metrics and optional RAGAS adapter

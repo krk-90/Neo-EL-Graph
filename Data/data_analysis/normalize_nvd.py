@@ -1,8 +1,8 @@
 import argparse
 import json
-import ijson
-
 from pathlib import Path
+
+import ijson
 
 
 def get_description(cve):
@@ -67,6 +67,21 @@ def get_affected_products(cve):
 
     products = []
 
+    configurations = cve.get("configurations", [])
+    for configuration in configurations:
+        for node in configuration.get("nodes", []):
+            for match in node.get("cpeMatch", []):
+                criteria = match.get("criteria")
+                if criteria:
+                    products.append({
+                        "vendor": "NVD CPE",
+                        "product": criteria,
+                        "versions": [{
+                            "version": criteria,
+                            "status": "affected" if not match.get("vulnerable") is False else "unaffected",
+                        }],
+                    })
+
     for item in cve.get("affected", []):
         # NVD feed structure
         affected_data = item.get("affectedData", [])
@@ -115,6 +130,7 @@ def normalize(record):
         "published": cve.get("published"),
         "last_modified": cve.get("lastModified"),
         "references": get_references(cve),
+        "vuln_status": cve.get("vulnStatus"),
     }
 
 

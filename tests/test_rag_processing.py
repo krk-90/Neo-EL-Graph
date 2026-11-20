@@ -3,8 +3,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.RAG.ingest.processing import chunk_docs, load_docs
 from langchain_core.documents import Document
+
+from tools.RAG.ingest.processing import chunk_docs, load_docs
 
 
 class ProcessingTests(unittest.TestCase):
