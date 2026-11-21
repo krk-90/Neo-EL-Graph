@@ -1,8 +1,70 @@
 # Neo-EL-Graph
 
-Neo-EL-Graph is an experimental vulnerability-research system. It can query the National Vulnerability Database (NVD) 2.0 API directly through an API agent, and the repository also retains separate experimental RAG and evaluation components.
+Neo-EL-Graph is a pre-backend prototype for vulnerability intelligence. It
+includes a direct NVD API agent, authorized network-analysis agents, a local
+Streamable HTTP MCP server, and separate experimental Chroma/RAG tools.
 
-> **Current scope:** the NVD API agent is runnable directly. Chroma/RAG components are separate experimental tools and are not used by the orchestrator.
+> **Scope:** this repository does not yet provide an authenticated production
+> backend. The MCP server binds to loopback by default. Network tools require
+> caller-supplied authorization scopes; a future backend must enforce those
+> scopes using trusted identity rather than trusting client input.
+
+## Run a network assessment
+
+Activate the virtual environment and run commands from the repository root.
+Requests are simple keyword-routed phrases. Multiple recognized intents can run
+together; an unrecognized request selects the full assessment workflow.
+
+Check TLS on one explicitly authorized host:
+
+```powershell
+python -m agent.orchestrator.main "Check TLS certificate" --target 192.168.1.10 --authorized-target 192.168.1.0/24 --port 443
+```
+
+Run DNS and TLS together on a hostname that you are authorized to assess:
+
+```powershell
+python -m agent.orchestrator.main "Check DNS and TLS" --target server.example.com --authorized-target server.example.com --port 443
+```
+
+DNS lookups require an explicitly authorized hostname. An IP address with a
+CIDR scope is valid for IP-based checks such as TCP and TLS, but not for DNS
+record lookup. Use a target and scope that you control; replace example values
+with your own authorized systems.
+
+Discover hosts in an authorized range:
+
+```powershell
+python -m agent.orchestrator.main "Discover hosts" --target-range 192.168.1.0/24 --authorized-target 192.168.1.0/24 --port 80 --port 443
+```
+
+Use `--keyword` to request NVD and optional RAG correlation during a network
+assessment. NVD correlation makes a live API request; RAG correlation requires
+a populated local or cloud Chroma collection. Unavailable correlation services
+are reported as partial results rather than silently treated as empty matches:
+
+```powershell
+python -m agent.orchestrator.main "Assess this authorized host" --target server.example.com --authorized-target server.example.com --keyword nginx --port 443
+```
+
+## Run the MCP server
+
+Start the local Streamable HTTP server:
+
+```powershell
+python -m tools.mcp_tools.server
+```
+
+The default endpoint is `http://127.0.0.1:8000/mcp`. To inspect it, run in a
+second terminal (Node.js/npm required):
+
+```powershell
+npx -y @modelcontextprotocol/inspector
+```
+
+In Inspector, select **Streamable HTTP**, connect to the endpoint, and open the
+**Tools** tab. Keep the server running while Inspector is connected. See
+[MCP_TOOLS.md](MCP_TOOLS.md) for the available tools and inputs.
 
 ## Features
 
@@ -14,12 +76,15 @@ Neo-EL-Graph is an experimental vulnerability-research system. It can query the 
 - Offline retrieval/generation metrics and optional RAGAS evaluation.
 - Standalone RAG security guardrails and prompt templates.
 - Optional LangSmith tracing.
+- Authorized DNS, TCP, TLS, discovery, ping, and traceroute tools.
+- LangGraph orchestration and a local MCP server for network and CVE tools.
 
 ## Requirements
 
 - Python 3.10+ (use a version supported by the installed LangChain dependencies).
 - Git.
 - Internet access for installing packages and downloading the Hugging Face model.
+- Node.js/npm only if you want to run MCP Inspector.
 - A Groq API key only if you want answer generation.
 - Hugging Face token only if you choose hosted endpoint embeddings.
 - Chroma Cloud credentials only if you choose Chroma Cloud instead of local Chroma.
@@ -54,7 +119,13 @@ If PowerShell blocks activation, run `Set-ExecutionPolicy -Scope Process -Execut
 ## 3. Install dependencies
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+```
+
+For the configured Ruff import checks, install the development dependencies:
+
+```bash
+python -m pip install -r requirements-dev.txt
 ```
 
 The first local embedding/indexing run downloads the Hugging Face model and may also download PyTorch dependencies. This can take time and disk space.
@@ -73,21 +144,33 @@ cp .example.env .env
 Copy-Item .example.env .env
 ```
 
+Runtime defaults for MCP and network limits are in [`config.yml`](config.yml).
+Environment variables from the shell or `.env` override those values. The
+precedence is shell environment, `.env`, `config.yml`, then built-in defaults.
+Keep credentials in `.env`; do not put secrets in `config.yml`.
+
 Open `.env` and configure only the services you use:
 
 | Variable | Required? | Purpose |
 |---|---|---|
 | `HF_EMBEDDING_MODEL` | No | Defaults to `sentence-transformers/all-MiniLM-L6-v2`. |
 | `HF_EMBEDDING_MODE` | No | `local` by default; use `endpoint` for hosted embeddings. |
-| `HUGGINGFACEHUB_API_TOKEN` | Endpoint only | Token for hosted Hugging Face embeddings. |
+| `HUGGINGFACEHUB_API_TOKEN` or `HF_TOKEN` | Endpoint only | Token for hosted Hugging Face embeddings. |
 | `GROQ_API_KEY` | Generation only | Enables the answer-generation command. |
-| `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE` | Cloud only | Chroma Cloud credentials. |
+| `NVD_API_KEY` | No | Optional key for higher NVD API rate limits. |
+| `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE` | Chroma Cloud only | Cloud credentials; leave blank for local Chroma. |
 | `CHROMA_COLLECTION` | No | Defaults to `cve_huggingface_minilm`. |
 | `CHROMA_PERSIST_DIRECTORY` | No | Defaults to `Database/chroma_db` for local storage. |
-| `LANGSMITH_API_KEY` | No | Enables LangSmith trace upload. |
-| `LANGSMITH_TRACING`, `LANGSMITH_PROJECT` | No | Tracing configuration. |
+| `LANGSMITH_API_KEY` | No | Enables LangSmith tracing when configured. |
+| `LANGSMITH_TRACING`, `LANGSMITH_PROJECT` | No | Tracing options; tracing is disabled by default. |
+| `MCP_HOST`, `MCP_PORT` | No | Optional overrides for MCP bind host and port; port must be 1–65535. |
+| `NETWORK_MAX_HOSTS` | No | Discovery cap; 1–256 hosts. |
+| `NETWORK_MAX_PORTS` | No | Maximum distinct ports per operation; 1–64. |
+| `NETWORK_MAX_CONCURRENT` | No | Concurrent network tasks; 1–256. |
+| `NETWORK_REQUEST_TIMEOUT_SECONDS` | No | Network timeout; 1–300 seconds. |
 
-**Important:** For local Chroma, leave `CHROMA_API_KEY` unset or remove the placeholder value from `.env`. If it is set, the ingestion code attempts to use Chroma Cloud and expects the tenant and database values too. Never commit your real `.env` file or API keys.
+Never commit `.env` or API keys. For local Chroma, leave the three cloud
+credentials blank; any non-empty `CHROMA_API_KEY` enables the cloud path.
 
 ## 5. Prepare the NVD data (optional)
 
@@ -169,7 +252,8 @@ The collection must be populated before retrieval. If it is empty, run the index
 
 ## 8. Query the NVD API agent
 
-The orchestrator performs direct NVD 2.0 API lookups and does not use Chroma or RAG retrieval.
+In direct NVD-query mode, the CLI calls the NVD 2.0 API and does not use Chroma
+or RAG retrieval.
 
 ```powershell
 python -m agent.orchestrator.main CVE-2021-44228
@@ -209,6 +293,16 @@ Run the repository's unit tests from the project root:
 python -m unittest discover -s tests -v
 ```
 
+The deterministic network routing/authorization evaluation is separate from the
+unit suite:
+
+```bash
+python -m tools.network_evaluation
+```
+
+It reads `Data/network_golden.jsonl` and refreshes `Data/network_evaluation.json`
+and `EVALUATION.md`; it does not contact real hosts.
+
 ## 11. Run the offline RAG evaluation
 
 The golden dataset is at `tools/RAG/Evaluation/golden_dataset.jsonl`. First create a predictions JSONL file with one row for every golden case. Each row must include the matching `id`, an ordered `retrieved_ids` list of CVE IDs, and the generated `answer`.
@@ -247,7 +341,8 @@ This reports faithfulness, answer relevancy, context precision, and context reca
 
 The security helpers and prompt templates are in `tools/RAG/Security/`. Read [the security integration notes](tools/RAG/Security/README.md) before wiring them into an application. They are not currently connected to the active retrieval/generation CLI pipeline, and pattern-based checks cannot guarantee prompt-injection immunity.
 
-Run the security and RAG tests with the full test command in [Section 9](#9-run-tests).
+Run the security and RAG tests with the full test command in
+[Section 10](#10-run-tests).
 
 ## Project structure
 
@@ -258,7 +353,9 @@ Neo-EL-Graph/
 │   └── processed/           # Processed CVE JSONL datasets
 ├── Database/                # Local Chroma persistence
 ├── agent/
-│   ├── orchestrator/        # Direct NVD API orchestrator
+│   ├── network/             # Authorized network-analysis agents
+│   ├── orchestrator/        # LangGraph workflow and CLI
+│   ├── config.py            # YAML defaults and environment overrides
 │   └── nvd_api_agent.py     # Exact-CVE and keyword NVD API agent
 ├── tools/
 │   ├── RAG/
@@ -267,10 +364,12 @@ Neo-EL-Graph/
 │   │   ├── Retriever/       # Hybrid retrieval and reranking
 │   │   ├── Security/        # Guardrails and prompt templates
 │   │   └── ingest/          # CVE loading, chunking, embeddings, Chroma
-│   └── mcp_tools/           # Incomplete MCP server placeholder
+│   └── mcp_tools/           # Streamable HTTP MCP server and tool handlers
 ├── tests/                   # Unit tests
+├── config.yml               # Non-secret MCP and network defaults
 ├── .example.env             # Environment-variable template
-└── requirements.txt
+├── requirements.txt         # Runtime dependencies
+└── requirements-dev.txt     # Runtime dependencies plus Ruff
 ```
 
 ## Troubleshooting
@@ -281,6 +380,9 @@ Neo-EL-Graph/
 - **Hugging Face endpoint authentication error:** set `HF_EMBEDDING_MODE=endpoint` and `HUGGINGFACEHUB_API_TOKEN`.
 - **Unexpected Chroma Cloud connection:** remove the placeholder `CHROMA_API_KEY` from `.env` to use local Chroma.
 - **No LangSmith traces:** configure `LANGSMITH_API_KEY`; tracing is optional.
+- **FastMCP import error mentioning MCP 2.x:** activate the project virtual environment and run `python -m pip install -r requirements.txt`; this project uses the MCP v1 API.
+- **Invalid runtime configuration:** check `config.yml` and the optional `MCP_*` / `NETWORK_*` overrides in `.env`; numeric values must be within the documented bounds.
+- **TLS timeout:** the host or port may be unreachable, filtered, or not serving TLS. This is an incomplete check, not a certificate vulnerability.
 - **Import errors:** run commands from the repository root with the project virtual environment activated.
 
 ## License
