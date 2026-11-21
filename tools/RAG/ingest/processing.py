@@ -53,7 +53,9 @@ def _document_from_record(record: dict[str, object]) -> Document | None:
         return None
 
     cve_id = record.get("cve_id") or record.get("id") or record.get("CVE")
-    description = record.get("description") or record.get("summary") or record.get("text") or ""
+    description = (
+        record.get("description") or record.get("summary") or record.get("text") or ""
+    )
     summary = _ensure_text(description).strip()
     if not summary and cve_id is None:
         return None
@@ -81,18 +83,29 @@ def _document_from_record(record: dict[str, object]) -> Document | None:
         "published": record.get("published"),
     }
     content = "\n".join(
-        part for part in [
+        part
+        for part in [
             f"CVE ID: {cve_id}" if cve_id else None,
             summary,
-            f"Severity: {metadata['severity']}" if metadata['severity'] else None,
-            f"CVSS Score: {metadata['cvss_score']}" if metadata['cvss_score'] is not None else None,
+            f"Severity: {metadata['severity']}" if metadata["severity"] else None,
+            f"CVSS Score: {metadata['cvss_score']}"
+            if metadata["cvss_score"] is not None
+            else None,
             f"CWE IDs: {metadata['cwe_ids']}" if metadata["cwe_ids"] else None,
-            f"Affected products: {record.get('affected_products')}" if record.get('affected_products') else None,
-            f"References: {record.get('references')}" if record.get('references') else None,
-        ] if part
+            f"Affected products: {record.get('affected_products')}"
+            if record.get("affected_products")
+            else None,
+            f"References: {record.get('references')}"
+            if record.get("references")
+            else None,
+        ]
+        if part
     )
 
-    return Document(page_content=content, metadata={k: v for k, v in metadata.items() if v is not None})
+    return Document(
+        page_content=content,
+        metadata={k: v for k, v in metadata.items() if v is not None},
+    )
 
 
 def load_docs(path: str | os.PathLike | None = None) -> List[Document]:
@@ -204,8 +217,7 @@ def get_chroma_store(
     api_key = os.getenv("CHROMA_API_KEY")
     if api_key and not local:
         missing = [
-            name for name in ("CHROMA_TENANT", "CHROMA_DATABASE")
-            if not os.getenv(name)
+            name for name in ("CHROMA_TENANT", "CHROMA_DATABASE") if not os.getenv(name)
         ]
         if missing:
             raise RuntimeError(
@@ -274,8 +286,8 @@ def store_docs(
         persist_directory=persist_directory,
     )
     for start in range(0, len(records), batch_size):
-        batch = records[start:start + batch_size]
-        store.add_documents(batch, ids=ids[start:start + batch_size])
+        batch = records[start : start + batch_size]
+        store.add_documents(batch, ids=ids[start : start + batch_size])
     return store
 
 

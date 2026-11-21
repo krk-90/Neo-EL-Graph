@@ -9,9 +9,7 @@ from tools.RAG.Evaluation.benchmark_retrieval import evaluate_retrieval
 class RetrievalBenchmarkTests(unittest.TestCase):
     @patch(
         "tools.RAG.Evaluation.benchmark_retrieval.get_embedded_text",
-        return_value={
-            "metadatas": [{"cve_id": "CVE-B"}]
-        },
+        return_value={"metadatas": [{"cve_id": "CVE-B"}]},
     )
     @patch("tools.RAG.Evaluation.benchmark_retrieval.retrieve")
     def test_reports_weak_retrieval_when_relevant_cve_is_missing(
@@ -36,15 +34,11 @@ class RetrievalBenchmarkTests(unittest.TestCase):
 
         self.assertEqual(report["assessment"], "weak")
         self.assertEqual(report["aggregate"]["recall@k"], 0.0)
-        self.assertFalse(
-            report["cases"][0]["index_coverage"]["CVE-A"]
-        )
+        self.assertFalse(report["cases"][0]["index_coverage"]["CVE-A"])
 
     @patch(
         "tools.RAG.Evaluation.benchmark_retrieval.get_embedded_text",
-        return_value={
-            "metadatas": [{"cve_id": "CVE-A"}]
-        },
+        return_value={"metadatas": [{"cve_id": "CVE-A"}]},
     )
     @patch("tools.RAG.Evaluation.benchmark_retrieval.retrieve")
     def test_reports_perfect_retrieval_for_indexed_first_result(
@@ -67,9 +61,7 @@ class RetrievalBenchmarkTests(unittest.TestCase):
         self.assertEqual(report["assessment"], "strong")
         self.assertEqual(report["aggregate"]["recall@k"], 1.0)
         self.assertEqual(report["aggregate"]["mrr"], 1.0)
-        self.assertTrue(
-            report["cases"][0]["index_coverage"]["CVE-A"]
-        )
+        self.assertTrue(report["cases"][0]["index_coverage"]["CVE-A"])
 
 
 if __name__ == "__main__":

@@ -44,7 +44,9 @@ class ProcessingTests(unittest.TestCase):
         )
         chunks = chunk_docs([document], chunk_size=300, chunk_overlap=30)
         self.assertGreater(len(chunks), 1)
-        self.assertTrue(all(chunk.metadata["cve_id"] == "CVE-2021-44228" for chunk in chunks))
+        self.assertTrue(
+            all(chunk.metadata["cve_id"] == "CVE-2021-44228" for chunk in chunks)
+        )
         self.assertEqual(chunks[0].metadata["chunk_index"], 0)
 
     def test_invalid_chunk_configuration_fails(self):

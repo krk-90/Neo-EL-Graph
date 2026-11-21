@@ -1,4 +1,5 @@
 """NVD API agent for exact and keyword vulnerability lookups."""
+
 from __future__ import annotations
 
 import json
@@ -9,7 +10,6 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 from dotenv import load_dotenv
 
@@ -50,8 +50,7 @@ def _cvss(cve: dict) -> dict:
         return {
             "version": data.get("version"),
             "score": data.get("baseScore"),
-            "severity": data.get("baseSeverity")
-            or entry.get("baseSeverity"),
+            "severity": data.get("baseSeverity") or entry.get("baseSeverity"),
             "vector": data.get("vectorString"),
         }
     return {"version": None, "score": None, "severity": "UNKNOWN", "vector": None}
@@ -66,20 +65,24 @@ def summarize_vulnerability(item: dict) -> dict:
         "last_modified": cve.get("lastModified"),
         "description": _english_description(cve),
         "cvss": _cvss(cve),
-        "weaknesses": sorted({
-            value
-            for weakness in cve.get("weaknesses", [])
-            for value in (
-                description.get("value")
-                for description in weakness.get("description", [])
-                if description.get("value", "").startswith("CWE-")
+        "weaknesses": sorted(
+            {
+                value
+                for weakness in cve.get("weaknesses", [])
+                for value in (
+                    description.get("value")
+                    for description in weakness.get("description", [])
+                    if description.get("value", "").startswith("CWE-")
+                )
+            }
+        ),
+        "references": list(
+            dict.fromkeys(
+                reference.get("url")
+                for reference in cve.get("references", [])
+                if reference.get("url")
             )
-        }),
-        "references": list(dict.fromkeys(
-            reference.get("url")
-            for reference in cve.get("references", [])
-            if reference.get("url")
-        )),
+        ),
     }
 
 
@@ -151,17 +154,13 @@ class NVDApiAgent:
         limit: int = 10,
         severity: str | None = None,
     ) -> NVDAgentResult:
-        cve_ids = tuple(dict.fromkeys(
-            match.upper() for match in CVE_PATTERN.findall(query)
-        ))
+        cve_ids = tuple(
+            dict.fromkeys(match.upper() for match in CVE_PATTERN.findall(query))
+        )
         if cve_ids:
-            vulnerabilities = tuple(
-                self.fetch_cve(cve_id) for cve_id in cve_ids
-            )
+            vulnerabilities = tuple(self.fetch_cve(cve_id) for cve_id in cve_ids)
         else:
-            vulnerabilities = tuple(
-                self.search(query, limit=limit, severity=severity)
-            )
+            vulnerabilities = tuple(self.search(query, limit=limit, severity=severity))
         return NVDAgentResult(
             query=query,
             cve_ids=cve_ids,

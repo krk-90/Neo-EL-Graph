@@ -1,4 +1,5 @@
 """Fetch CVEs from the NVD 2.0 API and add them to the filtered dataset."""
+
 from __future__ import annotations
 
 import argparse
@@ -81,9 +82,9 @@ def merge_cves(
     existing, _ = read_existing(output_path)
     fetched: list[str] = []
 
-    normalized_ids = list(dict.fromkeys(
-        cve_id.strip().upper() for cve_id in cve_ids if cve_id.strip()
-    ))
+    normalized_ids = list(
+        dict.fromkeys(cve_id.strip().upper() for cve_id in cve_ids if cve_id.strip())
+    )
     for index, cve_id in enumerate(normalized_ids):
         record = fetch_cve(cve_id, api_key=api_key, timeout=timeout)
         status = str(record.get("vuln_status") or "").lower()

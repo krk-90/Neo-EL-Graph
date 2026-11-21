@@ -21,9 +21,11 @@ os.environ.setdefault("LANGSMITH_PROJECT", "rag-tracing")
 COLLECTION_NAME = os.environ.get("CHROMA_COLLECTION", "cve_huggingface_minilm")
 
 if not os.environ.get("LANGSMITH_API_KEY") and not os.environ.get("LANGCHAIN_API_KEY"):
-    print("[WARN] LANGSMITH_API_KEY not set — @traceable calls will not report to LangSmith.")
+    print(
+        "[WARN] LANGSMITH_API_KEY not set — @traceable calls will not report to LangSmith."
+    )
 
-from tools.RAG.Retriever.retrieval import retrieve
+from tools.RAG.Retriever.retrieval import retrieve  # noqa: E402
 
 PROMPT_TEMPLATE = """You are a vulnerability research assistant. Answer using only the supplied CVE context.
 Distinguish confirmed facts from inference. Cite CVE IDs and CVSS severity or score when present.
@@ -38,6 +40,7 @@ Question: {input}
 Answer:
 """
 
+
 @lru_cache(maxsize=1)
 def llm_setup():
     api_key = os.getenv("GROQ_API_KEY")
@@ -45,20 +48,22 @@ def llm_setup():
         raise ValueError("GROQ_API_KEY environment variable is not set")
     llm_model = ChatGroq(
         model="openai/gpt-oss-20b",
-        temperature= 0.3,
-        api_key= api_key,
+        temperature=0.3,
+        api_key=api_key,
         max_tokens=3000,
         timeout=15,
         max_retries=2,
-        streaming=True
-        )
+        streaming=True,
+    )
     return llm_model
 
-def get_rag_chain(llm_model,retriever):
+
+def get_rag_chain(llm_model, retriever):
     prompt = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-    combine_docs = create_stuff_documents_chain(llm_model,prompt=prompt)
-    rag_chain = create_retrieval_chain(retriever,combine_docs)
+    combine_docs = create_stuff_documents_chain(llm_model, prompt=prompt)
+    rag_chain = create_retrieval_chain(retriever, combine_docs)
     return rag_chain
+
 
 @traceable(name="rag query")
 def ask_streaming(rag_chain, query: str):
@@ -82,10 +87,13 @@ def ask_streaming(rag_chain, query: str):
     print()
     return {"answer": "".join(answer_parts), "retrieved": sources}
 
+
 def main():
     parser = argparse.ArgumentParser(description="Query the RAG system")
     parser.add_argument("query", type=str, help="Your question")
-    parser.add_argument("--show-sources", action="store_true", help="Print retrieved chunks")
+    parser.add_argument(
+        "--show-sources", action="store_true", help="Print retrieved chunks"
+    )
     args = parser.parse_args()
 
     llm_model = llm_setup()
@@ -93,15 +101,15 @@ def main():
     rag_chain = get_rag_chain(llm_model, retriever)
 
     print("Answer:")
-    result = ask_streaming(rag_chain, args.query)   
+    result = ask_streaming(rag_chain, args.query)
     if args.show_sources:
         print("\nSources:")
         for i, doc in enumerate(result["retrieved"], 1):
             print(
-                f"  [{i}] {doc['cve_id']} "
-                f"({doc['severity']}, CVSS {doc['cvss_score']})"
+                f"  [{i}] {doc['cve_id']} ({doc['severity']}, CVSS {doc['cvss_score']})"
             )
             print(f"      {doc['snippet']}...")
+
 
 if __name__ == "__main__":
     main()

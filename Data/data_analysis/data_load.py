@@ -54,9 +54,7 @@ def parse_v2(item):
             break
 
     cwes = [
-        d["value"]
-        for w in cve.get("weaknesses", [])
-        for d in w.get("description", [])
+        d["value"] for w in cve.get("weaknesses", []) for d in w.get("description", [])
     ]
 
     return {
@@ -118,16 +116,18 @@ def parse_v11(item):
 def parse_nvd(data):
     """Detect the format and return a list of flat records."""
     if isinstance(data, dict):
-        if "vulnerabilities" in data:          # 2.0 API
+        if "vulnerabilities" in data:  # 2.0 API
             return [parse_v2(v) for v in data["vulnerabilities"]]
-        if "CVE_Items" in data:                # 1.1 feed
+        if "CVE_Items" in data:  # 1.1 feed
             return [parse_v11(v) for v in data["CVE_Items"]]
         raise ValueError(
             "Unrecognized NVD format. Top-level keys: " + ", ".join(data.keys())
         )
-    if isinstance(data, list):                 # JSON Lines / plain list
-        return [parse_v2(v) if "cve" in v and "id" in v["cve"] else parse_v11(v)
-                for v in data]
+    if isinstance(data, list):  # JSON Lines / plain list
+        return [
+            parse_v2(v) if "cve" in v and "id" in v["cve"] else parse_v11(v)
+            for v in data
+        ]
     raise ValueError("Unexpected JSON structure")
 
 
@@ -152,8 +152,11 @@ def main():
     print(f"{len(records):,} records after removing rejected CVEs")
     # Filters
     if args.min_score is not None:
-        records = [r for r in records
-                   if r["cvss_score"] is not None and r["cvss_score"] >= args.min_score]
+        records = [
+            r
+            for r in records
+            if r["cvss_score"] is not None and r["cvss_score"] >= args.min_score
+        ]
     if args.search:
         kw = args.search.lower()
         records = [r for r in records if kw in (r["description"] or "").lower()]
@@ -170,7 +173,9 @@ def main():
     print(f"\nFirst {min(args.limit, len(records))} records:")
     for r in records[: args.limit]:
         desc = (r["description"] or "").replace("\n", " ")
-        print(f"- {r['id']}  [{r['severity'] or 'N/A'} {r['cvss_score'] if r['cvss_score'] is not None else ''}]  {desc[:110]}...")
+        print(
+            f"- {r['id']}  [{r['severity'] or 'N/A'} {r['cvss_score'] if r['cvss_score'] is not None else ''}]  {desc[:110]}..."
+        )
     # Optional CSV export
     if args.csv and records:
         with open(args.csv, "w", newline="", encoding="utf-8") as f:

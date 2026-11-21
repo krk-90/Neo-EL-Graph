@@ -38,10 +38,7 @@ def get_cvss(cve):
         return {
             "version": data.get("version"),
             "score": data.get("baseScore"),
-            "severity": data.get(
-                "baseSeverity",
-                entries[0].get("baseSeverity")
-            ),
+            "severity": data.get("baseSeverity", entries[0].get("baseSeverity")),
         }
 
     return None
@@ -73,14 +70,20 @@ def get_affected_products(cve):
             for match in node.get("cpeMatch", []):
                 criteria = match.get("criteria")
                 if criteria:
-                    products.append({
-                        "vendor": "NVD CPE",
-                        "product": criteria,
-                        "versions": [{
-                            "version": criteria,
-                            "status": "affected" if not match.get("vulnerable") is False else "unaffected",
-                        }],
-                    })
+                    products.append(
+                        {
+                            "vendor": "NVD CPE",
+                            "product": criteria,
+                            "versions": [
+                                {
+                                    "version": criteria,
+                                    "status": "affected"
+                                    if match.get("vulnerable") is not False
+                                    else "unaffected",
+                                }
+                            ],
+                        }
+                    )
 
     for item in cve.get("affected", []):
         # NVD feed structure
@@ -95,11 +98,13 @@ def get_affected_products(cve):
                 for version in affected.get("versions", [])
             ]
 
-            products.append({
-                "vendor": affected.get("vendor"),
-                "product": affected.get("product"),
-                "versions": versions,
-            })
+            products.append(
+                {
+                    "vendor": affected.get("vendor"),
+                    "product": affected.get("product"),
+                    "versions": versions,
+                }
+            )
 
     return products
 
@@ -107,11 +112,7 @@ def get_affected_products(cve):
 def get_references(cve):
     """Extract unique reference URLs while preserving order."""
 
-    references = [
-        ref.get("url")
-        for ref in cve.get("references", [])
-        if ref.get("url")
-    ]
+    references = [ref.get("url") for ref in cve.get("references", []) if ref.get("url")]
 
     return list(dict.fromkeys(references))
 
@@ -171,20 +172,18 @@ def process(input_file, output_file):
     count = 0
     skipped = 0
 
-    with open(input_path, "rb") as source, \
-         open(output_path, "w", encoding="utf-8") as output:
-
+    with (
+        open(input_path, "rb") as source,
+        open(output_path, "w", encoding="utf-8") as output,
+    ):
         for record in ijson.items(source, f"{array_key}.item"):
-
             normalized = normalize(record)
 
             if not normalized["cve_id"]:
                 skipped += 1
                 continue
 
-            output.write(
-                json.dumps(normalized, default=float) + "\n"
-            )
+            output.write(json.dumps(normalized, default=float) + "\n")
 
             count += 1
 
@@ -203,15 +202,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--input",
-        required=True,
-        help="Path to the NVD JSON input file."
+        "--input", required=True, help="Path to the NVD JSON input file."
     )
 
     parser.add_argument(
         "--output",
         default="Data/processed/nvd_normalized.jsonl",
-        help="Path to the normalized JSONL output."
+        help="Path to the normalized JSONL output.",
     )
 
     args = parser.parse_args()

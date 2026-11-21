@@ -12,9 +12,10 @@ def filter_records():
     kept = 0
     rejected = 0
 
-    with INPUT_FILE.open("r", encoding="utf-8") as source, \
-         OUTPUT_FILE.open("w", encoding="utf-8") as output:
-
+    with (
+        INPUT_FILE.open("r", encoding="utf-8") as source,
+        OUTPUT_FILE.open("w", encoding="utf-8") as output,
+    ):
         for line in source:
             record = json.loads(line)
             total += 1
@@ -22,9 +23,8 @@ def filter_records():
             status = (record.get("vuln_status") or "").lower()
             description = record.get("description", "").lower()
 
-            is_rejected = (
-                status == "rejected"
-                or description.startswith("rejected reason:")
+            is_rejected = status == "rejected" or description.startswith(
+                "rejected reason:"
             )
 
             if is_rejected:

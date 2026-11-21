@@ -1,4 +1,5 @@
 """Run the dependency-light retrieval benchmark and write JSON metrics."""
+
 from __future__ import annotations
 
 import argparse
@@ -85,9 +86,7 @@ def evaluate_retrieval(golden: dict[str, dict], k: int = 5) -> dict:
 
     recall = report["aggregate"]["recall@k"]
     report["assessment"] = (
-        "strong" if recall >= 0.70
-        else "moderate" if recall >= 0.40
-        else "weak"
+        "strong" if recall >= 0.70 else "moderate" if recall >= 0.40 else "weak"
     )
     return report
 

@@ -17,15 +17,17 @@ if str(ROOT) not in sys.path:
 
 load_dotenv(dotenv_path=ROOT / ".env")
 
-from tools.RAG.ingest.processing import get_chroma_store
-from tools.RAG.Retriever.rerank import wrap_with_reranking
+from tools.RAG.ingest.processing import get_chroma_store  # noqa: E402
+from tools.RAG.Retriever.rerank import wrap_with_reranking  # noqa: E402
 
 os.environ.setdefault("LANGSMITH_TRACING", "true")
 os.environ.setdefault("LANGSMITH_PROJECT", "rag-tracing")
 COLLECTION_NAME = os.environ.get("CHROMA_COLLECTION", "cve_huggingface_minilm")
 
 if not os.environ.get("LANGSMITH_API_KEY") and not os.environ.get("LANGCHAIN_API_KEY"):
-    print("[WARN] LANGSMITH_API_KEY not set — @traceable calls will not report to LangSmith.")
+    print(
+        "[WARN] LANGSMITH_API_KEY not set — @traceable calls will not report to LangSmith."
+    )
 
 _bm25_docs_cache = None
 
@@ -175,21 +177,50 @@ def search_cves(query: str, limit: int = 5, severity: str | None = None) -> list
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Query or inspect the RAG vector store")
-    parser.add_argument("--query", type=str, help="Query text to retrieve relevant chunks for")
-    parser.add_argument("--k", type=int, default=4, help="Number of final results after reranking (default: 4)")
-    parser.add_argument("--fetch-k", type=int, default=None,
-                        help="Number of candidates to fetch from vector+BM25 before reranking (default: 4*k, min 20)")
-    parser.add_argument("--no-rerank", action="store_true",
-                        help="Disable reranking and return raw ensemble retriever results")
-    parser.add_argument("--refresh-bm25", action="store_true",
-                        help="Force-refresh the BM25 index from Chroma before querying")
-    parser.add_argument("--inspect", action="store_true",
-                        help="Print stored documents/metadata instead of running a query")
-    parser.add_argument("--limit", type=int, default=None,
-                        help="Limit number of documents fetched when using --inspect")
-    parser.add_argument("--json", action="store_true",
-                        help="Output retrieved results as JSON instead of pretty-printed text")
+    parser = argparse.ArgumentParser(
+        description="Query or inspect the RAG vector store"
+    )
+    parser.add_argument(
+        "--query", type=str, help="Query text to retrieve relevant chunks for"
+    )
+    parser.add_argument(
+        "--k",
+        type=int,
+        default=4,
+        help="Number of final results after reranking (default: 4)",
+    )
+    parser.add_argument(
+        "--fetch-k",
+        type=int,
+        default=None,
+        help="Number of candidates to fetch from vector+BM25 before reranking (default: 4*k, min 20)",
+    )
+    parser.add_argument(
+        "--no-rerank",
+        action="store_true",
+        help="Disable reranking and return raw ensemble retriever results",
+    )
+    parser.add_argument(
+        "--refresh-bm25",
+        action="store_true",
+        help="Force-refresh the BM25 index from Chroma before querying",
+    )
+    parser.add_argument(
+        "--inspect",
+        action="store_true",
+        help="Print stored documents/metadata instead of running a query",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Limit number of documents fetched when using --inspect",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output retrieved results as JSON instead of pretty-printed text",
+    )
     args = parser.parse_args()
 
     if args.inspect:
@@ -207,8 +238,7 @@ def main():
     results = retriever.invoke(args.query)
     if args.json:
         payload = [
-            {"content": doc.page_content, "metadata": doc.metadata}
-            for doc in results
+            {"content": doc.page_content, "metadata": doc.metadata} for doc in results
         ]
         print(json.dumps(payload, indent=2))
     else:

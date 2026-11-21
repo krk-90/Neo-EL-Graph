@@ -18,14 +18,15 @@ class Retriever(Protocol):
     def retrieve(self, query: str) -> Sequence[Document]:
         """Return the documents most relevant to a query."""
 
+
 class AgentState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     context: str
     sources: list[str]
 
+
 @dataclass(frozen=True)
 class AgentResult:
-
     answer: AIMessage
     messages: tuple[AnyMessage, ...]
     sources: tuple[str, ...]
@@ -46,7 +47,7 @@ class AgentPipeline:
         ),
         checkpointer: BaseCheckpointSaver | None = None,
     ) -> None:
-        
+
         self._tools = tuple(tools)
         self._retriever = retriever
         self._system_prompt = system_prompt
@@ -105,9 +106,7 @@ class AgentPipeline:
     def _call_agent(self, state: AgentState) -> dict[str, list[AnyMessage]]:
         system_content = self._system_prompt
         if state["context"]:
-            system_content += (
-                "\n\nRetrieved reference passages:\n" + state["context"]
-            )
+            system_content += "\n\nRetrieved reference passages:\n" + state["context"]
 
         response = self._model.invoke(
             [SystemMessage(content=system_content), *state["messages"]]

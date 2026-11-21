@@ -130,8 +130,7 @@ def select_cves(
     print(
         "Severity counts: "
         + ", ".join(
-            f"{severity}={allocation[severity]}"
-            for severity in severity_groups
+            f"{severity}={allocation[severity]}" for severity in severity_groups
         )
     )
     print(f"Output: {output_file}")
