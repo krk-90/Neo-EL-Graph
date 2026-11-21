@@ -1,0 +1,11 @@
+# Non-secret runtime defaults. Shell variables and .env values override these.
+mcp:
+  host: "127.0.0.1"
+  port: 8000
+
+# Limits: hosts 1-256, ports 1-64, concurrency 1-256, timeout 1-300 seconds.
+network:
+  max_hosts: 256
+  max_ports: 64
+  max_concurrent: 32
+  timeout_seconds: 3

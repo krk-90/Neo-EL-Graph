@@ -1,0 +1,4 @@
+{"id":"dns_authorized","request":"resolve DNS records","target":"example.com","authorized_targets":["example.com"],"expected_classification":"dns","expected_authorized":true}
+{"id":"dns_outside_scope","request":"resolve DNS records","target":"other.example","authorized_targets":["example.com"],"expected_classification":"dns","expected_authorized":false}
+{"id":"private_port_check","request":"check open ports","target":"10.0.0.10","authorized_targets":["10.0.0.0/24"],"expected_classification":"ports","expected_authorized":true}
+{"id":"metadata_block","request":"check this server","target":"169.254.169.254","authorized_targets":["169.254.169.254"],"expected_classification":"assessment","expected_authorized":false}

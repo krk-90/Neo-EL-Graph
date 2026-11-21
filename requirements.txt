@@ -11,3 +11,7 @@ langchain-text-splitters>=0.3.0
 python-dotenv>=1.0.0
 rank-bm25>=0.2.2
 sentence-transformers>=2.2.0
+dnspython>=2.6.0
+langgraph>=0.2.0
+mcp>=1.2.0,<2
+PyYAML>=6.0
